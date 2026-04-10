@@ -30,7 +30,11 @@ import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedRolesIndexRouteImport } from './routes/_authenticated/roles/index'
+import { Route as AuthenticatedResourceTypesIndexRouteImport } from './routes/_authenticated/resource-types/index'
+import { Route as AuthenticatedResourceTemplatesIndexRouteImport } from './routes/_authenticated/resource-templates/index'
+import { Route as AuthenticatedResourceDefinitionIndexRouteImport } from './routes/_authenticated/resource-definition/index'
 import { Route as AuthenticatedPlansIndexRouteImport } from './routes/_authenticated/plans/index'
+import { Route as AuthenticatedMarketplaceIndexRouteImport } from './routes/_authenticated/marketplace/index'
 import { Route as AuthenticatedK8sIndexRouteImport } from './routes/_authenticated/k8s/index'
 import { Route as AuthenticatedHypervisorIndexRouteImport } from './routes/_authenticated/hypervisor/index'
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
@@ -45,11 +49,16 @@ import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
 import { Route as AuthenticatedRolesNewRouteImport } from './routes/_authenticated/roles/new'
+import { Route as AuthenticatedResourceTemplatesNewRouteImport } from './routes/_authenticated/resource-templates/new'
+import { Route as AuthenticatedResourceTemplatesTemplateIdRouteImport } from './routes/_authenticated/resource-templates/$templateId'
 import { Route as AuthenticatedPlansNewRouteImport } from './routes/_authenticated/plans/new'
+import { Route as AuthenticatedMarketplaceNewRouteImport } from './routes/_authenticated/marketplace/new'
+import { Route as AuthenticatedMarketplaceAppIdRouteImport } from './routes/_authenticated/marketplace/$appId'
 import { Route as AuthenticatedK8sNewRouteImport } from './routes/_authenticated/k8s/new'
 import { Route as AuthenticatedK8sClusterIdRouteImport } from './routes/_authenticated/k8s/$clusterId'
 import { Route as AuthenticatedHypervisorNodeIdRouteImport } from './routes/_authenticated/hypervisor/$nodeId'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
+import { Route as AuthenticatedResourceTemplatesTemplateIdEditRouteImport } from './routes/_authenticated/resource-templates/$templateId.edit'
 
 const ClerkRouteRoute = ClerkRouteRouteImport.update({
   id: '/clerk',
@@ -155,11 +164,35 @@ const AuthenticatedRolesIndexRoute = AuthenticatedRolesIndexRouteImport.update({
   path: '/roles/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedResourceTypesIndexRoute =
+  AuthenticatedResourceTypesIndexRouteImport.update({
+    id: '/resource-types/',
+    path: '/resource-types/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedResourceTemplatesIndexRoute =
+  AuthenticatedResourceTemplatesIndexRouteImport.update({
+    id: '/resource-templates/',
+    path: '/resource-templates/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedResourceDefinitionIndexRoute =
+  AuthenticatedResourceDefinitionIndexRouteImport.update({
+    id: '/resource-definition/',
+    path: '/resource-definition/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPlansIndexRoute = AuthenticatedPlansIndexRouteImport.update({
   id: '/plans/',
   path: '/plans/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMarketplaceIndexRoute =
+  AuthenticatedMarketplaceIndexRouteImport.update({
+    id: '/marketplace/',
+    path: '/marketplace/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedK8sIndexRoute = AuthenticatedK8sIndexRouteImport.update({
   id: '/k8s/',
   path: '/k8s/',
@@ -237,11 +270,35 @@ const AuthenticatedRolesNewRoute = AuthenticatedRolesNewRouteImport.update({
   path: '/roles/new',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedResourceTemplatesNewRoute =
+  AuthenticatedResourceTemplatesNewRouteImport.update({
+    id: '/resource-templates/new',
+    path: '/resource-templates/new',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedResourceTemplatesTemplateIdRoute =
+  AuthenticatedResourceTemplatesTemplateIdRouteImport.update({
+    id: '/resource-templates/$templateId',
+    path: '/resource-templates/$templateId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPlansNewRoute = AuthenticatedPlansNewRouteImport.update({
   id: '/plans/new',
   path: '/plans/new',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMarketplaceNewRoute =
+  AuthenticatedMarketplaceNewRouteImport.update({
+    id: '/marketplace/new',
+    path: '/marketplace/new',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMarketplaceAppIdRoute =
+  AuthenticatedMarketplaceAppIdRouteImport.update({
+    id: '/marketplace/$appId',
+    path: '/marketplace/$appId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedK8sNewRoute = AuthenticatedK8sNewRouteImport.update({
   id: '/k8s/new',
   path: '/k8s/new',
@@ -265,6 +322,12 @@ const AuthenticatedErrorsErrorRoute =
     path: '/errors/$error',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedResourceTemplatesTemplateIdEditRoute =
+  AuthenticatedResourceTemplatesTemplateIdEditRouteImport.update({
+    id: '/edit',
+    path: '/edit',
+    getParentRoute: () => AuthenticatedResourceTemplatesTemplateIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -284,7 +347,11 @@ export interface FileRoutesByFullPath {
   '/hypervisor/$nodeId': typeof AuthenticatedHypervisorNodeIdRoute
   '/k8s/$clusterId': typeof AuthenticatedK8sClusterIdRoute
   '/k8s/new': typeof AuthenticatedK8sNewRoute
+  '/marketplace/$appId': typeof AuthenticatedMarketplaceAppIdRoute
+  '/marketplace/new': typeof AuthenticatedMarketplaceNewRoute
   '/plans/new': typeof AuthenticatedPlansNewRoute
+  '/resource-templates/$templateId': typeof AuthenticatedResourceTemplatesTemplateIdRouteWithChildren
+  '/resource-templates/new': typeof AuthenticatedResourceTemplatesNewRoute
   '/roles/new': typeof AuthenticatedRolesNewRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
@@ -299,12 +366,17 @@ export interface FileRoutesByFullPath {
   '/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/hypervisor/': typeof AuthenticatedHypervisorIndexRoute
   '/k8s/': typeof AuthenticatedK8sIndexRoute
+  '/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
   '/plans/': typeof AuthenticatedPlansIndexRoute
+  '/resource-definition/': typeof AuthenticatedResourceDefinitionIndexRoute
+  '/resource-templates/': typeof AuthenticatedResourceTemplatesIndexRoute
+  '/resource-types/': typeof AuthenticatedResourceTypesIndexRoute
   '/roles/': typeof AuthenticatedRolesIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/tasks/': typeof AuthenticatedTasksIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
   '/zones/': typeof AuthenticatedZonesIndexRoute
+  '/resource-templates/$templateId/edit': typeof AuthenticatedResourceTemplatesTemplateIdEditRoute
 }
 export interface FileRoutesByTo {
   '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
@@ -323,7 +395,11 @@ export interface FileRoutesByTo {
   '/hypervisor/$nodeId': typeof AuthenticatedHypervisorNodeIdRoute
   '/k8s/$clusterId': typeof AuthenticatedK8sClusterIdRoute
   '/k8s/new': typeof AuthenticatedK8sNewRoute
+  '/marketplace/$appId': typeof AuthenticatedMarketplaceAppIdRoute
+  '/marketplace/new': typeof AuthenticatedMarketplaceNewRoute
   '/plans/new': typeof AuthenticatedPlansNewRoute
+  '/resource-templates/$templateId': typeof AuthenticatedResourceTemplatesTemplateIdRouteWithChildren
+  '/resource-templates/new': typeof AuthenticatedResourceTemplatesNewRoute
   '/roles/new': typeof AuthenticatedRolesNewRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
@@ -338,12 +414,17 @@ export interface FileRoutesByTo {
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/hypervisor': typeof AuthenticatedHypervisorIndexRoute
   '/k8s': typeof AuthenticatedK8sIndexRoute
+  '/marketplace': typeof AuthenticatedMarketplaceIndexRoute
   '/plans': typeof AuthenticatedPlansIndexRoute
+  '/resource-definition': typeof AuthenticatedResourceDefinitionIndexRoute
+  '/resource-templates': typeof AuthenticatedResourceTemplatesIndexRoute
+  '/resource-types': typeof AuthenticatedResourceTypesIndexRoute
   '/roles': typeof AuthenticatedRolesIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
   '/zones': typeof AuthenticatedZonesIndexRoute
+  '/resource-templates/$templateId/edit': typeof AuthenticatedResourceTemplatesTemplateIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -367,7 +448,11 @@ export interface FileRoutesById {
   '/_authenticated/hypervisor/$nodeId': typeof AuthenticatedHypervisorNodeIdRoute
   '/_authenticated/k8s/$clusterId': typeof AuthenticatedK8sClusterIdRoute
   '/_authenticated/k8s/new': typeof AuthenticatedK8sNewRoute
+  '/_authenticated/marketplace/$appId': typeof AuthenticatedMarketplaceAppIdRoute
+  '/_authenticated/marketplace/new': typeof AuthenticatedMarketplaceNewRoute
   '/_authenticated/plans/new': typeof AuthenticatedPlansNewRoute
+  '/_authenticated/resource-templates/$templateId': typeof AuthenticatedResourceTemplatesTemplateIdRouteWithChildren
+  '/_authenticated/resource-templates/new': typeof AuthenticatedResourceTemplatesNewRoute
   '/_authenticated/roles/new': typeof AuthenticatedRolesNewRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
@@ -382,12 +467,17 @@ export interface FileRoutesById {
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/_authenticated/hypervisor/': typeof AuthenticatedHypervisorIndexRoute
   '/_authenticated/k8s/': typeof AuthenticatedK8sIndexRoute
+  '/_authenticated/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
   '/_authenticated/plans/': typeof AuthenticatedPlansIndexRoute
+  '/_authenticated/resource-definition/': typeof AuthenticatedResourceDefinitionIndexRoute
+  '/_authenticated/resource-templates/': typeof AuthenticatedResourceTemplatesIndexRoute
+  '/_authenticated/resource-types/': typeof AuthenticatedResourceTypesIndexRoute
   '/_authenticated/roles/': typeof AuthenticatedRolesIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
   '/_authenticated/zones/': typeof AuthenticatedZonesIndexRoute
+  '/_authenticated/resource-templates/$templateId/edit': typeof AuthenticatedResourceTemplatesTemplateIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -409,7 +499,11 @@ export interface FileRouteTypes {
     | '/hypervisor/$nodeId'
     | '/k8s/$clusterId'
     | '/k8s/new'
+    | '/marketplace/$appId'
+    | '/marketplace/new'
     | '/plans/new'
+    | '/resource-templates/$templateId'
+    | '/resource-templates/new'
     | '/roles/new'
     | '/settings/account'
     | '/settings/appearance'
@@ -424,12 +518,17 @@ export interface FileRouteTypes {
     | '/help-center/'
     | '/hypervisor/'
     | '/k8s/'
+    | '/marketplace/'
     | '/plans/'
+    | '/resource-definition/'
+    | '/resource-templates/'
+    | '/resource-types/'
     | '/roles/'
     | '/settings/'
     | '/tasks/'
     | '/users/'
     | '/zones/'
+    | '/resource-templates/$templateId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/clerk'
@@ -448,7 +547,11 @@ export interface FileRouteTypes {
     | '/hypervisor/$nodeId'
     | '/k8s/$clusterId'
     | '/k8s/new'
+    | '/marketplace/$appId'
+    | '/marketplace/new'
     | '/plans/new'
+    | '/resource-templates/$templateId'
+    | '/resource-templates/new'
     | '/roles/new'
     | '/settings/account'
     | '/settings/appearance'
@@ -463,12 +566,17 @@ export interface FileRouteTypes {
     | '/help-center'
     | '/hypervisor'
     | '/k8s'
+    | '/marketplace'
     | '/plans'
+    | '/resource-definition'
+    | '/resource-templates'
+    | '/resource-types'
     | '/roles'
     | '/settings'
     | '/tasks'
     | '/users'
     | '/zones'
+    | '/resource-templates/$templateId/edit'
   id:
     | '__root__'
     | '/_authenticated'
@@ -491,7 +599,11 @@ export interface FileRouteTypes {
     | '/_authenticated/hypervisor/$nodeId'
     | '/_authenticated/k8s/$clusterId'
     | '/_authenticated/k8s/new'
+    | '/_authenticated/marketplace/$appId'
+    | '/_authenticated/marketplace/new'
     | '/_authenticated/plans/new'
+    | '/_authenticated/resource-templates/$templateId'
+    | '/_authenticated/resource-templates/new'
     | '/_authenticated/roles/new'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
@@ -506,12 +618,17 @@ export interface FileRouteTypes {
     | '/_authenticated/help-center/'
     | '/_authenticated/hypervisor/'
     | '/_authenticated/k8s/'
+    | '/_authenticated/marketplace/'
     | '/_authenticated/plans/'
+    | '/_authenticated/resource-definition/'
+    | '/_authenticated/resource-templates/'
+    | '/_authenticated/resource-types/'
     | '/_authenticated/roles/'
     | '/_authenticated/settings/'
     | '/_authenticated/tasks/'
     | '/_authenticated/users/'
     | '/_authenticated/zones/'
+    | '/_authenticated/resource-templates/$templateId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -678,11 +795,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRolesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/resource-types/': {
+      id: '/_authenticated/resource-types/'
+      path: '/resource-types'
+      fullPath: '/resource-types/'
+      preLoaderRoute: typeof AuthenticatedResourceTypesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/resource-templates/': {
+      id: '/_authenticated/resource-templates/'
+      path: '/resource-templates'
+      fullPath: '/resource-templates/'
+      preLoaderRoute: typeof AuthenticatedResourceTemplatesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/resource-definition/': {
+      id: '/_authenticated/resource-definition/'
+      path: '/resource-definition'
+      fullPath: '/resource-definition/'
+      preLoaderRoute: typeof AuthenticatedResourceDefinitionIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/plans/': {
       id: '/_authenticated/plans/'
       path: '/plans'
       fullPath: '/plans/'
       preLoaderRoute: typeof AuthenticatedPlansIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/marketplace/': {
+      id: '/_authenticated/marketplace/'
+      path: '/marketplace'
+      fullPath: '/marketplace/'
+      preLoaderRoute: typeof AuthenticatedMarketplaceIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/k8s/': {
@@ -783,11 +928,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRolesNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/resource-templates/new': {
+      id: '/_authenticated/resource-templates/new'
+      path: '/resource-templates/new'
+      fullPath: '/resource-templates/new'
+      preLoaderRoute: typeof AuthenticatedResourceTemplatesNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/resource-templates/$templateId': {
+      id: '/_authenticated/resource-templates/$templateId'
+      path: '/resource-templates/$templateId'
+      fullPath: '/resource-templates/$templateId'
+      preLoaderRoute: typeof AuthenticatedResourceTemplatesTemplateIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/plans/new': {
       id: '/_authenticated/plans/new'
       path: '/plans/new'
       fullPath: '/plans/new'
       preLoaderRoute: typeof AuthenticatedPlansNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/marketplace/new': {
+      id: '/_authenticated/marketplace/new'
+      path: '/marketplace/new'
+      fullPath: '/marketplace/new'
+      preLoaderRoute: typeof AuthenticatedMarketplaceNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/marketplace/$appId': {
+      id: '/_authenticated/marketplace/$appId'
+      path: '/marketplace/$appId'
+      fullPath: '/marketplace/$appId'
+      preLoaderRoute: typeof AuthenticatedMarketplaceAppIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/k8s/new': {
@@ -818,6 +991,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedErrorsErrorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/resource-templates/$templateId/edit': {
+      id: '/_authenticated/resource-templates/$templateId/edit'
+      path: '/edit'
+      fullPath: '/resource-templates/$templateId/edit'
+      preLoaderRoute: typeof AuthenticatedResourceTemplatesTemplateIdEditRouteImport
+      parentRoute: typeof AuthenticatedResourceTemplatesTemplateIdRoute
+    }
   }
 }
 
@@ -844,6 +1024,21 @@ const AuthenticatedSettingsRouteRouteWithChildren =
     AuthenticatedSettingsRouteRouteChildren,
   )
 
+interface AuthenticatedResourceTemplatesTemplateIdRouteChildren {
+  AuthenticatedResourceTemplatesTemplateIdEditRoute: typeof AuthenticatedResourceTemplatesTemplateIdEditRoute
+}
+
+const AuthenticatedResourceTemplatesTemplateIdRouteChildren: AuthenticatedResourceTemplatesTemplateIdRouteChildren =
+  {
+    AuthenticatedResourceTemplatesTemplateIdEditRoute:
+      AuthenticatedResourceTemplatesTemplateIdEditRoute,
+  }
+
+const AuthenticatedResourceTemplatesTemplateIdRouteWithChildren =
+  AuthenticatedResourceTemplatesTemplateIdRoute._addFileChildren(
+    AuthenticatedResourceTemplatesTemplateIdRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -851,7 +1046,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHypervisorNodeIdRoute: typeof AuthenticatedHypervisorNodeIdRoute
   AuthenticatedK8sClusterIdRoute: typeof AuthenticatedK8sClusterIdRoute
   AuthenticatedK8sNewRoute: typeof AuthenticatedK8sNewRoute
+  AuthenticatedMarketplaceAppIdRoute: typeof AuthenticatedMarketplaceAppIdRoute
+  AuthenticatedMarketplaceNewRoute: typeof AuthenticatedMarketplaceNewRoute
   AuthenticatedPlansNewRoute: typeof AuthenticatedPlansNewRoute
+  AuthenticatedResourceTemplatesTemplateIdRoute: typeof AuthenticatedResourceTemplatesTemplateIdRouteWithChildren
+  AuthenticatedResourceTemplatesNewRoute: typeof AuthenticatedResourceTemplatesNewRoute
   AuthenticatedRolesNewRoute: typeof AuthenticatedRolesNewRoute
   AuthenticatedZonesNewRoute: typeof AuthenticatedZonesNewRoute
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
@@ -859,7 +1058,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
   AuthenticatedHypervisorIndexRoute: typeof AuthenticatedHypervisorIndexRoute
   AuthenticatedK8sIndexRoute: typeof AuthenticatedK8sIndexRoute
+  AuthenticatedMarketplaceIndexRoute: typeof AuthenticatedMarketplaceIndexRoute
   AuthenticatedPlansIndexRoute: typeof AuthenticatedPlansIndexRoute
+  AuthenticatedResourceDefinitionIndexRoute: typeof AuthenticatedResourceDefinitionIndexRoute
+  AuthenticatedResourceTemplatesIndexRoute: typeof AuthenticatedResourceTemplatesIndexRoute
+  AuthenticatedResourceTypesIndexRoute: typeof AuthenticatedResourceTypesIndexRoute
   AuthenticatedRolesIndexRoute: typeof AuthenticatedRolesIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
@@ -873,7 +1076,13 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHypervisorNodeIdRoute: AuthenticatedHypervisorNodeIdRoute,
   AuthenticatedK8sClusterIdRoute: AuthenticatedK8sClusterIdRoute,
   AuthenticatedK8sNewRoute: AuthenticatedK8sNewRoute,
+  AuthenticatedMarketplaceAppIdRoute: AuthenticatedMarketplaceAppIdRoute,
+  AuthenticatedMarketplaceNewRoute: AuthenticatedMarketplaceNewRoute,
   AuthenticatedPlansNewRoute: AuthenticatedPlansNewRoute,
+  AuthenticatedResourceTemplatesTemplateIdRoute:
+    AuthenticatedResourceTemplatesTemplateIdRouteWithChildren,
+  AuthenticatedResourceTemplatesNewRoute:
+    AuthenticatedResourceTemplatesNewRoute,
   AuthenticatedRolesNewRoute: AuthenticatedRolesNewRoute,
   AuthenticatedZonesNewRoute: AuthenticatedZonesNewRoute,
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
@@ -881,7 +1090,13 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
   AuthenticatedHypervisorIndexRoute: AuthenticatedHypervisorIndexRoute,
   AuthenticatedK8sIndexRoute: AuthenticatedK8sIndexRoute,
+  AuthenticatedMarketplaceIndexRoute: AuthenticatedMarketplaceIndexRoute,
   AuthenticatedPlansIndexRoute: AuthenticatedPlansIndexRoute,
+  AuthenticatedResourceDefinitionIndexRoute:
+    AuthenticatedResourceDefinitionIndexRoute,
+  AuthenticatedResourceTemplatesIndexRoute:
+    AuthenticatedResourceTemplatesIndexRoute,
+  AuthenticatedResourceTypesIndexRoute: AuthenticatedResourceTypesIndexRoute,
   AuthenticatedRolesIndexRoute: AuthenticatedRolesIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,

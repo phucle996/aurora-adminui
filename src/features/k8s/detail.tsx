@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, RefreshCw, ShieldAlert, Trash2 } from 'lucide-react'
@@ -18,10 +19,26 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
   deleteK8sCluster,
-  getK8sClusterDetail,
+  getK8sClusterDetailPageData,
   revalidateK8sCluster,
+  updateK8sCluster,
 } from './api'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 
 function formatDateTime(value?: string) {
   if (!value) return '-'
@@ -56,7 +73,7 @@ function InfoRow(props: { label: string; value: string }) {
       <span className='text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground'>
         {props.label}
       </span>
-      <span className='text-sm font-medium text-foreground break-all'>
+      <span className='break-all text-sm font-medium text-foreground'>
         {props.value}
       </span>
     </div>
@@ -66,10 +83,11 @@ function InfoRow(props: { label: string; value: string }) {
 export function K8sClusterDetailPage(props: { clusterID: string }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const [zoneID, setZoneID] = useState('')
 
-  const detailQuery = useQuery({
-    queryKey: ['k8s-cluster', props.clusterID],
-    queryFn: () => getK8sClusterDetail(props.clusterID),
+  const pageDataQuery = useQuery({
+    queryKey: ['k8s-cluster-page', props.clusterID],
+    queryFn: () => getK8sClusterDetailPageData(props.clusterID),
   })
 
   const revalidateMutation = useMutation({
@@ -77,7 +95,7 @@ export function K8sClusterDetailPage(props: { clusterID: string }) {
     onSuccess: (cluster) => {
       toast.success(`Revalidated ${cluster.name}`)
       queryClient.invalidateQueries({ queryKey: ['k8s-clusters'] })
-      queryClient.setQueryData(['k8s-cluster', cluster.id], cluster)
+      queryClient.invalidateQueries({ queryKey: ['k8s-cluster-page', cluster.id] })
     },
     onError: (error) => {
       toast.error(
@@ -100,7 +118,31 @@ export function K8sClusterDetailPage(props: { clusterID: string }) {
     },
   })
 
-  const cluster = detailQuery.data
+  const updateMutation = useMutation({
+    mutationFn: (input: { zone_id: string }) =>
+      updateK8sCluster(props.clusterID, input),
+    onSuccess: (cluster) => {
+      toast.success(`Updated ${cluster.name}`)
+      queryClient.invalidateQueries({ queryKey: ['k8s-clusters'] })
+      queryClient.invalidateQueries({ queryKey: ['k8s-cluster-page', cluster.id] })
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to update cluster'
+      )
+    },
+  })
+
+  const cluster = pageDataQuery.data
+  const pageErrorMessage =
+    pageDataQuery.error instanceof Error
+      ? pageDataQuery.error.message
+      : 'Failed to load kubernetes cluster'
+
+  useEffect(() => {
+    if (!cluster) return
+    setZoneID(cluster.zone_id || '')
+  }, [cluster])
 
   function handleDelete() {
     if (!cluster) return
@@ -108,6 +150,16 @@ export function K8sClusterDetailPage(props: { clusterID: string }) {
       return
     }
     deleteMutation.mutate(cluster.id)
+  }
+
+  function handleSaveSettings() {
+    if (!zoneID) {
+      toast.error('Please choose a zone for this cluster')
+      return
+    }
+    updateMutation.mutate({
+      zone_id: zoneID,
+    })
   }
 
   return (
@@ -129,8 +181,8 @@ export function K8sClusterDetailPage(props: { clusterID: string }) {
               {cluster?.name || 'Kubernetes Cluster Detail'}
             </h1>
             <p className='page-copy'>
-              Review cluster identity, access metadata, capability flags, and
-              the latest validation result stored by the platform.
+              Review cluster identity, live node inventory, and zone placement
+              for this execution substrate.
             </p>
           </div>
           <div className='flex flex-wrap gap-3'>
@@ -143,7 +195,7 @@ export function K8sClusterDetailPage(props: { clusterID: string }) {
             <Button
               variant='outline'
               onClick={() => revalidateMutation.mutate(props.clusterID)}
-              disabled={revalidateMutation.isPending}
+              disabled={revalidateMutation.isPending || pageDataQuery.isFetching}
             >
               <RefreshCw className='size-4' />
               Revalidate
@@ -151,7 +203,7 @@ export function K8sClusterDetailPage(props: { clusterID: string }) {
             <Button
               variant='destructive'
               onClick={handleDelete}
-              disabled={deleteMutation.isPending || detailQuery.isLoading}
+              disabled={deleteMutation.isPending || pageDataQuery.isLoading}
             >
               <Trash2 className='size-4' />
               Delete
@@ -159,23 +211,21 @@ export function K8sClusterDetailPage(props: { clusterID: string }) {
           </div>
         </section>
 
-        {detailQuery.isLoading ? (
+        {pageDataQuery.isLoading ? (
           <div className='rounded-md border bg-card p-8 text-sm text-muted-foreground'>
             Loading cluster detail...
           </div>
-        ) : detailQuery.isError || !cluster ? (
+        ) : pageDataQuery.isError || !cluster ? (
           <div className='rounded-md border bg-card p-8'>
             <div className='flex items-start gap-3 text-sm text-warning'>
               <ShieldAlert className='mt-0.5 size-4 shrink-0' />
               <span>
-                {detailQuery.error instanceof Error
-                  ? detailQuery.error.message
-                  : 'Failed to load kubernetes cluster'}
+                {pageErrorMessage}
               </span>
             </div>
           </div>
         ) : (
-          <div className='grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]'>
+          <div className='grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]'>
             <Card>
               <CardHeader className='space-y-3'>
                 <div className='flex items-center gap-3'>
@@ -193,7 +243,6 @@ export function K8sClusterDetailPage(props: { clusterID: string }) {
               </CardHeader>
               <CardContent className='grid gap-3 md:grid-cols-2'>
                 <InfoRow label='Zone' value={cluster.zone_name || '-'} />
-                <InfoRow label='Import mode' value={cluster.import_mode} />
                 <InfoRow
                   label='API server'
                   value={cluster.api_server_url || '-'}
@@ -210,78 +259,130 @@ export function K8sClusterDetailPage(props: { clusterID: string }) {
                   label='Last validated'
                   value={formatDateTime(cluster.last_validated_at)}
                 />
+                <InfoRow
+                  label='Created at'
+                  value={formatDateTime(cluster.created_at)}
+                />
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Capability flags</CardTitle>
+                <CardTitle>Cluster zone</CardTitle>
                 <CardDescription>
-                  These flags decide which future platform products can target
-                  this cluster.
+                  Assign this cluster to exactly one zone. Resource definition
+                  support is configured on the zone, not on the cluster.
                 </CardDescription>
               </CardHeader>
-              <CardContent className='space-y-3'>
-                <div className='flex flex-wrap gap-2'>
-                  <Badge
-                    variant={cluster.supports_dbaas ? 'default' : 'secondary'}
-                    className='rounded-full px-3 py-1'
-                  >
-                    DBaaS
-                  </Badge>
-                  <Badge
-                    variant={
-                      cluster.supports_serverless ? 'default' : 'secondary'
+              <CardContent className='grid gap-4'>
+                <div className='grid gap-2'>
+                  <label className='text-sm font-medium text-foreground'>
+                    Assign to zone
+                  </label>
+                  <Select
+                    value={zoneID || '__none__'}
+                    onValueChange={(value) =>
+                      setZoneID(value === '__none__' ? '' : value)
                     }
-                    className='rounded-full px-3 py-1'
                   >
-                    Serverless
-                  </Badge>
-                  <Badge
-                    variant={
-                      cluster.supports_generic_workloads
-                        ? 'default'
-                        : 'secondary'
-                    }
-                    className='rounded-full px-3 py-1'
-                  >
-                    Generic workloads
-                  </Badge>
+                    <SelectTrigger className='w-full'>
+                      <SelectValue placeholder='Choose a zone' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='__none__' disabled>
+                        Choose a zone
+                      </SelectItem>
+                      {(cluster.zone_options || []).map((zone) => (
+                        <SelectItem key={zone.id} value={zone.id}>
+                          {zone.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className='rounded-xl border border-border/70 bg-muted/20 px-4 py-4 text-sm leading-7 text-muted-foreground'>
-                  Use `revalidate` any time to check whether the stored kubeconfig
-                  can still reach the Kubernetes API server and perform the
-                  lightweight namespace read used by the platform validator.
+
+                <div className='flex flex-wrap gap-3'>
+                  <Button
+                    onClick={handleSaveSettings}
+                    disabled={
+                      updateMutation.isPending || pageDataQuery.isLoading
+                    }
+                  >
+                    Save cluster zone
+                  </Button>
+                  <Badge variant='secondary' className='rounded-full px-3 py-1'>
+                    Zone: {cluster.zone_name || 'Unbound'}
+                  </Badge>
                 </div>
               </CardContent>
             </Card>
 
             <Card className='xl:col-span-2'>
               <CardHeader>
-                <CardTitle>Validation summary</CardTitle>
+                <CardTitle>Cluster nodes</CardTitle>
                 <CardDescription>
-                  The latest validation run determines whether this substrate is
-                  usable, misconfigured, or temporarily unreachable.
+                  Live node inventory resolved through controlplane using the
+                  stored kubeconfig for this cluster.
                 </CardDescription>
               </CardHeader>
-              <CardContent className='grid gap-3 md:grid-cols-3'>
-                <InfoRow label='Status' value={cluster.validation_status} />
-                <InfoRow
-                  label='Created at'
-                  value={formatDateTime(cluster.created_at)}
-                />
-                <InfoRow
-                  label='Zone binding'
-                  value={cluster.zone_name || 'Unbound'}
-                />
-                <div className='md:col-span-3 rounded-xl border border-border/70 bg-muted/20 px-4 py-4'>
-                  <p className='text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground'>
-                    Last validation error
-                  </p>
-                  <p className='mt-2 text-sm leading-7 text-foreground'>
-                    {cluster.last_validation_error || 'No validation error.'}
-                  </p>
-                </div>
+              <CardContent>
+                {pageDataQuery.isLoading ? (
+                  <div className='rounded-xl border border-dashed border-border/70 bg-muted/20 px-4 py-4 text-sm text-muted-foreground'>
+                    Loading cluster nodes...
+                  </div>
+                ) : pageDataQuery.isError ? (
+                  <div className='rounded-xl border border-dashed border-border/70 bg-muted/20 px-4 py-4 text-sm text-warning'>
+                    {pageErrorMessage}
+                  </div>
+                ) : (cluster.nodes || []).length === 0 ? (
+                  <div className='rounded-xl border border-dashed border-border/70 bg-muted/20 px-4 py-4 text-sm text-muted-foreground'>
+                    No nodes were returned by the cluster API.
+                  </div>
+                ) : (
+                  <div className='rounded-xl border border-border/70 bg-muted/20 p-2'>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Roles</TableHead>
+                          <TableHead>Kubelet</TableHead>
+                          <TableHead>Runtime</TableHead>
+                          <TableHead>OS image</TableHead>
+                          <TableHead>Kernel</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {(cluster.nodes || []).map((node) => (
+                          <TableRow key={node.name}>
+                            <TableCell className='font-medium text-foreground'>
+                              {node.name}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={node.ready ? 'default' : 'secondary'}
+                                className='rounded-full px-2.5 py-0.5 text-[11px]'
+                              >
+                                {node.ready ? 'Ready' : 'Not ready'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className='max-w-56 whitespace-normal text-muted-foreground'>
+                              {node.roles.join(', ') || 'worker'}
+                            </TableCell>
+                            <TableCell>{node.kubelet_version || '-'}</TableCell>
+                            <TableCell className='max-w-56 whitespace-normal text-muted-foreground'>
+                              {node.container_runtime || '-'}
+                            </TableCell>
+                            <TableCell className='max-w-72 whitespace-normal text-muted-foreground'>
+                              {node.os_image || '-'}
+                            </TableCell>
+                            <TableCell>{node.kernel_version || '-'}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

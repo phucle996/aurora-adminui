@@ -7,21 +7,15 @@ import (
 
 	domainsvc "aurora-adminui/internal/domain/service"
 	httpdto "aurora-adminui/internal/transport/http/dto/response"
-	"aurora-adminui/internal/transport/http/middleware"
 	"aurora-adminui/internal/transport/http/response"
 )
 
 type UserHandler struct {
-	svc      domainsvc.UserService
-	adminSvc domainsvc.AdminService
+	svc domainsvc.UserService
 }
 
-func NewUserHandler(svc domainsvc.UserService, adminSvc domainsvc.AdminService) *UserHandler {
-	return &UserHandler{svc: svc, adminSvc: adminSvc}
-}
-
-func (h *UserHandler) RequireAdminSession(next http.HandlerFunc) http.HandlerFunc {
-	return middleware.RequireAdminSession(h.adminSvc, next)
+func NewUserHandler(svc domainsvc.UserService) *UserHandler {
+	return &UserHandler{svc: svc}
 }
 
 func (h *UserHandler) HandleListUsers(w http.ResponseWriter, r *http.Request) {

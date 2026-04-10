@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, Boxes, Plus } from 'lucide-react'
 import { toast } from 'sonner'
@@ -13,18 +13,59 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { listResourceDefinitions } from '@/features/resource-types/api'
 import { createPlan } from './api'
 
 export function AddPlanPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const [resourceType] = useState('vps')
+  const [resourceType, setResourceType] = useState('')
+  const [resourceModel, setResourceModel] = useState('')
   const [code, setCode] = useState('')
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [vcpu, setVCPU] = useState('2')
   const [ramGb, setRamGb] = useState('4')
   const [diskGb, setDiskGb] = useState('50')
+
+  const resourceDefinitionsQuery = useQuery({
+    queryKey: ['resource-definitions'],
+    queryFn: listResourceDefinitions,
+  })
+
+  const resourceTypes = useMemo(() => {
+    const items = resourceDefinitionsQuery.data || []
+    return [...new Set(items.map((item) => item.resource_type))].sort((left, right) =>
+      left.localeCompare(right)
+    )
+  }, [resourceDefinitionsQuery.data])
+
+  const resourceModels = useMemo(() => {
+    const items = resourceDefinitionsQuery.data || []
+    return items
+      .filter((item) => item.resource_type === resourceType)
+      .map((item) => item.resource_model)
+      .filter((value, index, array) => array.indexOf(value) === index)
+      .sort((left, right) => left.localeCompare(right))
+  }, [resourceDefinitionsQuery.data, resourceType])
+
+  useEffect(() => {
+    if (!resourceType && resourceTypes[0]) {
+      setResourceType(resourceTypes[0])
+    }
+  }, [resourceType, resourceTypes])
+
+  useEffect(() => {
+    if (resourceModels.length === 0) {
+      if (resourceModel !== '') {
+        setResourceModel('')
+      }
+      return
+    }
+    if (!resourceModels.includes(resourceModel)) {
+      setResourceModel(resourceModels[0] || '')
+    }
+  }, [resourceModel, resourceModels])
 
   const createPlanMutation = useMutation({
     mutationFn: createPlan,
@@ -41,13 +82,14 @@ export function AddPlanPage() {
   })
 
   function handleCreatePlan() {
-    if (!code.trim() || !name.trim()) {
-      toast.error('Plan code and name are required')
+    if (!resourceType || !resourceModel || !code.trim() || !name.trim()) {
+      toast.error('Resource type, resource model, plan code, and name are required')
       return
     }
 
     createPlanMutation.mutate({
       resourceType,
+      resourceModel,
       code: code.trim(),
       name: name.trim(),
       description: description.trim(),
@@ -102,7 +144,52 @@ export function AddPlanPage() {
                 <label className='text-sm font-medium text-foreground'>
                   Resource type
                 </label>
-                <Input value={resourceType.toUpperCase()} disabled />
+                <select
+                  value={resourceType}
+                  onChange={(event) => setResourceType(event.target.value)}
+                  className='h-10 w-full rounded-md border border-input bg-background px-3 text-sm'
+                  disabled={resourceDefinitionsQuery.isLoading}
+                >
+                  {resourceTypes.length > 0 ? (
+                    resourceTypes.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))
+                  ) : (
+                    <option value=''>
+                      {resourceDefinitionsQuery.isLoading
+                        ? 'Loading resource types...'
+                        : 'No resource types found'}
+                    </option>
+                  )}
+                </select>
+              </div>
+
+              <div className='space-y-2'>
+                <label className='text-sm font-medium text-foreground'>
+                  Resource model
+                </label>
+                <select
+                  value={resourceModel}
+                  onChange={(event) => setResourceModel(event.target.value)}
+                  className='h-10 w-full rounded-md border border-input bg-background px-3 text-sm'
+                  disabled={resourceDefinitionsQuery.isLoading || resourceModels.length === 0}
+                >
+                  {resourceModels.length > 0 ? (
+                    resourceModels.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))
+                  ) : (
+                    <option value=''>
+                      {resourceDefinitionsQuery.isLoading
+                        ? 'Loading resource models...'
+                        : 'No resource models found'}
+                    </option>
+                  )}
+                </select>
               </div>
 
               <div className='space-y-2'>

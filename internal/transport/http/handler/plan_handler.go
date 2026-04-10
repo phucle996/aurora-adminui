@@ -10,21 +10,15 @@ import (
 	"aurora-adminui/internal/errorx"
 	requestdto "aurora-adminui/internal/transport/http/dto/request"
 	httpdto "aurora-adminui/internal/transport/http/dto/response"
-	"aurora-adminui/internal/transport/http/middleware"
 	"aurora-adminui/internal/transport/http/response"
 )
 
 type PlanHandler struct {
-	svc      domainsvc.PlanService
-	adminSvc domainsvc.AdminService
+	svc domainsvc.PlanService
 }
 
-func NewPlanHandler(svc domainsvc.PlanService, adminSvc domainsvc.AdminService) *PlanHandler {
-	return &PlanHandler{svc: svc, adminSvc: adminSvc}
-}
-
-func (h *PlanHandler) RequireAdminSession(next http.HandlerFunc) http.HandlerFunc {
-	return middleware.RequireAdminSession(h.adminSvc, next)
+func NewPlanHandler(svc domainsvc.PlanService) *PlanHandler {
+	return &PlanHandler{svc: svc}
 }
 
 func (h *PlanHandler) HandlePlansCollection(w http.ResponseWriter, r *http.Request) {
@@ -64,6 +58,7 @@ func (h *PlanHandler) handleCreatePlan(w http.ResponseWriter, r *http.Request) {
 	item, err := h.svc.CreatePlan(
 		ctx,
 		req.ResourceType,
+		req.ResourceModel,
 		req.Code,
 		req.Name,
 		req.Description,

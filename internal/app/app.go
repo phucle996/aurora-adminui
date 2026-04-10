@@ -19,6 +19,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 )
@@ -33,6 +34,7 @@ type Application struct {
 	redisClient *redis.Client
 }
 
+// New wires infrastructure, runs bootstrap migrations, and builds the admin UI HTTP server.
 func New(ctx context.Context, cfg *config.Config) (*Application, error) {
 	controlPlaneURL, err := url.Parse(cfg.ControlPlane.BaseURL)
 	if err != nil {
@@ -80,12 +82,13 @@ func New(ctx context.Context, cfg *config.Config) (*Application, error) {
 		return nil, fmt.Errorf("bootstrap admin token: %w", err)
 	}
 
-	mux := http.NewServeMux()
-	RegisterRoutes(mux, modules, controlPlaneURL, distFS)
+	router := gin.New()
+	router.Use(gin.Recovery())
+	RegisterRoutes(router, modules, controlPlaneURL, distFS)
 
 	server := &http.Server{
 		Addr:              cfg.Server.ListenAddr,
-		Handler:           mux,
+		Handler:           router,
 		ReadHeaderTimeout: cfg.Server.ReadHeaderTimeout,
 	}
 	if cfg.Server.TLSCertFile != "" && cfg.Server.TLSKeyFile != "" {
@@ -100,6 +103,7 @@ func New(ctx context.Context, cfg *config.Config) (*Application, error) {
 	}, nil
 }
 
+// Run starts the HTTP server and blocks until the process receives a shutdown signal.
 func (a *Application) Run() error {
 	servingHTTPS := a.cfg.Server.TLSCertFile != "" && a.cfg.Server.TLSKeyFile != ""
 	if servingHTTPS {
@@ -142,6 +146,7 @@ func (a *Application) Run() error {
 	return nil
 }
 
+// runMigrations replays the embedded SQL bootstrap files in lexical order.
 func runMigrations(ctx context.Context, db *pgxpool.Pool) error {
 	entries, err := migrationFiles.ReadDir("migrations")
 	if err != nil {

@@ -1,6 +1,7 @@
+import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { Plus, ShieldAlert } from 'lucide-react'
+import { ArrowDown, ArrowUp, ChevronsUpDown, Plus, ShieldAlert } from 'lucide-react'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -18,13 +19,52 @@ import {
 } from '@/components/ui/table'
 import { listPlans } from './api'
 
+type SortKey = 'resource_type' | 'status' | 'vcpu' | 'ram_gb' | 'disk_gb'
+type SortDirection = 'desc' | 'asc'
+
 export function PlansPage() {
+  const [sortState, setSortState] = useState<{
+    key: SortKey
+    direction: SortDirection
+  } | null>(null)
+
   const plansQuery = useQuery({
     queryKey: ['plans'],
     queryFn: listPlans,
   })
 
-  const plans = plansQuery.data || []
+  const plans = useMemo(() => {
+    const items = [...(plansQuery.data || [])]
+    if (!sortState) {
+      return items
+    }
+
+    return items.sort((left, right) => {
+      const leftValue = left[sortState.key]
+      const rightValue = right[sortState.key]
+
+      if (typeof leftValue === 'number' && typeof rightValue === 'number') {
+        return sortState.direction === 'desc'
+          ? rightValue - leftValue
+          : leftValue - rightValue
+      }
+
+      const compared = String(leftValue).localeCompare(String(rightValue))
+      return sortState.direction === 'desc' ? -compared : compared
+    })
+  }, [plansQuery.data, sortState])
+
+  function toggleSort(key: SortKey) {
+    setSortState((current) => {
+      if (!current || current.key !== key) {
+        return { key, direction: 'desc' }
+      }
+      if (current.direction === 'desc') {
+        return { key, direction: 'asc' }
+      }
+      return null
+    })
+  }
 
   return (
     <>
@@ -60,11 +100,36 @@ export function PlansPage() {
               <TableRow>
                 <TableHead className='w-[220px]'>Name</TableHead>
                 <TableHead className='w-[160px]'>Code</TableHead>
-                <TableHead className='w-[140px]'>Resource</TableHead>
-                <TableHead className='w-[120px]'>Status</TableHead>
-                <TableHead className='w-[100px]'>vCPU</TableHead>
-                <TableHead className='w-[100px]'>RAM</TableHead>
-                <TableHead className='w-[100px]'>Disk</TableHead>
+                <SortableHead
+                  className='w-[140px]'
+                  label='Resource'
+                  active={sortState?.key === 'resource_type' ? sortState.direction : null}
+                  onClick={() => toggleSort('resource_type')}
+                />
+                <SortableHead
+                  className='w-[120px]'
+                  label='Status'
+                  active={sortState?.key === 'status' ? sortState.direction : null}
+                  onClick={() => toggleSort('status')}
+                />
+                <SortableHead
+                  className='w-[100px]'
+                  label='vCPU'
+                  active={sortState?.key === 'vcpu' ? sortState.direction : null}
+                  onClick={() => toggleSort('vcpu')}
+                />
+                <SortableHead
+                  className='w-[100px]'
+                  label='RAM'
+                  active={sortState?.key === 'ram_gb' ? sortState.direction : null}
+                  onClick={() => toggleSort('ram_gb')}
+                />
+                <SortableHead
+                  className='w-[100px]'
+                  label='Disk'
+                  active={sortState?.key === 'disk_gb' ? sortState.direction : null}
+                  onClick={() => toggleSort('disk_gb')}
+                />
                 <TableHead>Description</TableHead>
               </TableRow>
             </TableHeader>
@@ -129,5 +194,31 @@ export function PlansPage() {
         </div>
       </Main>
     </>
+  )
+}
+
+function SortableHead(props: {
+  label: string
+  className?: string
+  active: SortDirection | null
+  onClick: () => void
+}) {
+  return (
+    <TableHead className={props.className}>
+      <button
+        type='button'
+        onClick={props.onClick}
+        className='inline-flex items-center gap-1 text-left text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground transition hover:text-foreground'
+      >
+        <span>{props.label}</span>
+        {props.active === 'desc' ? (
+          <ArrowDown className='size-3.5' />
+        ) : props.active === 'asc' ? (
+          <ArrowUp className='size-3.5' />
+        ) : (
+          <ChevronsUpDown className='size-3.5' />
+        )}
+      </button>
+    </TableHead>
   )
 }

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -14,23 +13,20 @@ import (
 	"aurora-adminui/internal/errorx"
 	requestdto "aurora-adminui/internal/transport/http/dto/request"
 	httpdto "aurora-adminui/internal/transport/http/dto/response"
-	"aurora-adminui/internal/transport/http/middleware"
 	"aurora-adminui/internal/transport/http/response"
 )
 
 type K8sHandler struct {
-	svc      domainsvc.K8sService
-	adminSvc domainsvc.AdminService
+	svc     domainsvc.K8sService
+	zoneSvc domainsvc.ZoneService
 }
 
-func NewK8sHandler(svc domainsvc.K8sService, adminSvc domainsvc.AdminService) *K8sHandler {
-	return &K8sHandler{svc: svc, adminSvc: adminSvc}
+// NewK8sHandler wires the HTTP adapter for kubernetes cluster management pages.
+func NewK8sHandler(svc domainsvc.K8sService, zoneSvc domainsvc.ZoneService) *K8sHandler {
+	return &K8sHandler{svc: svc, zoneSvc: zoneSvc}
 }
 
-func (h *K8sHandler) RequireAdminSession(next http.HandlerFunc) http.HandlerFunc {
-	return middleware.RequireAdminSession(h.adminSvc, next)
-}
-
+// HandleClustersCollection serves list and create operations for the kubernetes catalog.
 func (h *K8sHandler) HandleClustersCollection(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
@@ -42,6 +38,7 @@ func (h *K8sHandler) HandleClustersCollection(w http.ResponseWriter, r *http.Req
 	}
 }
 
+// HandleClusterItem serves the page-data, update, revalidate, and delete flows for one cluster.
 func (h *K8sHandler) HandleClusterItem(w http.ResponseWriter, r *http.Request) {
 	clusterID, action, ok := parseK8sClusterPath(r.URL.Path)
 	if !ok {
@@ -52,6 +49,10 @@ func (h *K8sHandler) HandleClusterItem(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case r.Method == http.MethodGet && action == "":
 		h.handleClusterDetail(w, r, clusterID)
+	case r.Method == http.MethodGet && action == "page-data":
+		h.handleClusterDetailPageData(w, r, clusterID)
+	case r.Method == http.MethodPatch && action == "":
+		h.handleUpdateCluster(w, r, clusterID)
 	case r.Method == http.MethodPost && action == "revalidate":
 		h.handleRevalidateCluster(w, r, clusterID)
 	case r.Method == http.MethodDelete && action == "":
@@ -59,6 +60,33 @@ func (h *K8sHandler) HandleClusterItem(w http.ResponseWriter, r *http.Request) {
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
+}
+
+func (h *K8sHandler) handleClusterDetailPageData(w http.ResponseWriter, r *http.Request, clusterID string) {
+	ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
+	defer cancel()
+
+	item, err := h.svc.GetClusterDetail(ctx, clusterID)
+	if err != nil {
+		switch {
+		case errors.Is(err, errorx.ErrInvalidArgument):
+			response.JSON(w, http.StatusBadRequest, "invalid request", nil)
+		case errors.Is(err, errorx.ErrK8sClusterNotFound):
+			response.JSON(w, http.StatusNotFound, "cluster not found", nil)
+		default:
+			response.JSON(w, http.StatusInternalServerError, "failed to load kubernetes cluster", nil)
+		}
+		return
+	}
+
+	nodes, _ := h.svc.ListClusterNodes(ctx, clusterID)
+	zones, err := h.zoneSvc.ListZones(ctx)
+	if err != nil {
+		response.JSON(w, http.StatusInternalServerError, "failed to load zones", nil)
+		return
+	}
+
+	response.JSON(w, http.StatusOK, "ok", httpdto.NewK8sClusterDetailPageData(item, nodes, zones))
 }
 
 func (h *K8sHandler) handleListClusters(w http.ResponseWriter, r *http.Request) {
@@ -93,24 +121,18 @@ func (h *K8sHandler) handleCreateCluster(w http.ResponseWriter, r *http.Request)
 	}
 
 	req := requestdto.CreateK8sClusterRequest{
-		Name:                     strings.TrimSpace(r.FormValue("name")),
-		Description:              strings.TrimSpace(r.FormValue("description")),
-		ZoneID:                   strings.TrimSpace(r.FormValue("zone_id")),
-		SupportsDBAAS:            parseFormBool(r.FormValue("supports_dbaas")),
-		SupportsServerless:       parseFormBool(r.FormValue("supports_serverless")),
-		SupportsGenericWorkloads: parseFormBool(r.FormValue("supports_generic_workloads")),
+		Name:        strings.TrimSpace(r.FormValue("name")),
+		Description: strings.TrimSpace(r.FormValue("description")),
+		ZoneID:      strings.TrimSpace(r.FormValue("zone_id")),
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 	defer cancel()
 	item, err := h.svc.CreateCluster(ctx, entity.K8sClusterCreateInput{
-		Name:                     req.Name,
-		Description:              req.Description,
-		ZoneID:                   req.ZoneID,
-		SupportsDBAAS:            req.SupportsDBAAS,
-		SupportsServerless:       req.SupportsServerless,
-		SupportsGenericWorkloads: req.SupportsGenericWorkloads,
-		Kubeconfig:               kubeconfig,
+		Name:        req.Name,
+		Description: req.Description,
+		ZoneID:      req.ZoneID,
+		Kubeconfig:  kubeconfig,
 	})
 	if err != nil {
 		switch {
@@ -120,6 +142,10 @@ func (h *K8sHandler) handleCreateCluster(w http.ResponseWriter, r *http.Request)
 			response.JSON(w, http.StatusNotFound, "zone not found", nil)
 		case errors.Is(err, errorx.ErrK8sClusterAlreadyExists):
 			response.JSON(w, http.StatusConflict, "cluster already exists", nil)
+		case errors.Is(err, errorx.ErrNoHealthyDataplane):
+			response.JSON(w, http.StatusServiceUnavailable, "no healthy dataplane available", nil)
+		case errors.Is(err, errorx.ErrDataplaneValidationFailed):
+			response.JSON(w, http.StatusFailedDependency, "failed to validate kubernetes cluster", nil)
 		default:
 			response.JSON(w, http.StatusInternalServerError, "failed to create kubernetes cluster", nil)
 		}
@@ -150,7 +176,7 @@ func (h *K8sHandler) handleClusterDetail(w http.ResponseWriter, r *http.Request,
 }
 
 func (h *K8sHandler) handleRevalidateCluster(w http.ResponseWriter, r *http.Request, clusterID string) {
-	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 	defer cancel()
 
 	item, err := h.svc.RevalidateCluster(ctx, clusterID)
@@ -160,6 +186,8 @@ func (h *K8sHandler) handleRevalidateCluster(w http.ResponseWriter, r *http.Requ
 			response.JSON(w, http.StatusBadRequest, "invalid request", nil)
 		case errors.Is(err, errorx.ErrK8sClusterNotFound):
 			response.JSON(w, http.StatusNotFound, "cluster not found", nil)
+		case errors.Is(err, errorx.ErrNoHealthyDataplane):
+			response.JSON(w, http.StatusServiceUnavailable, "no healthy dataplane available", nil)
 		default:
 			response.JSON(w, http.StatusInternalServerError, "failed to revalidate kubernetes cluster", nil)
 		}
@@ -167,6 +195,65 @@ func (h *K8sHandler) handleRevalidateCluster(w http.ResponseWriter, r *http.Requ
 	}
 
 	response.JSON(w, http.StatusOK, "cluster revalidated", httpdto.NewK8sClusterDetail(item))
+}
+
+func (h *K8sHandler) handleUpdateCluster(w http.ResponseWriter, r *http.Request, clusterID string) {
+	req := requestdto.UpdateK8sClusterRequest{}
+	var kubeconfig []byte
+
+	if strings.HasPrefix(strings.ToLower(strings.TrimSpace(r.Header.Get("Content-Type"))), "multipart/form-data") {
+		if err := r.ParseMultipartForm(2 << 20); err != nil {
+			response.JSON(w, http.StatusBadRequest, "invalid request", nil)
+			return
+		}
+		req.ZoneID = strings.TrimSpace(r.FormValue("zone_id"))
+
+		file, _, err := r.FormFile("kubeconfig")
+		switch {
+		case err == nil:
+			defer file.Close()
+			kubeconfig, err = io.ReadAll(file)
+			if err != nil {
+				response.JSON(w, http.StatusBadRequest, "failed to read kubeconfig", nil)
+				return
+			}
+		case !errors.Is(err, http.ErrMissingFile):
+			response.JSON(w, http.StatusBadRequest, "invalid request", nil)
+			return
+		}
+	} else {
+		if err := decodeJSON(r, &req); err != nil {
+			response.JSON(w, http.StatusBadRequest, "invalid request", nil)
+			return
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+
+	item, err := h.svc.UpdateCluster(ctx, clusterID, entity.K8sClusterUpdateInput{
+		ZoneID:     strings.TrimSpace(req.ZoneID),
+		Kubeconfig: kubeconfig,
+	})
+	if err != nil {
+		switch {
+		case errors.Is(err, errorx.ErrInvalidArgument):
+			response.JSON(w, http.StatusBadRequest, "invalid request", nil)
+		case errors.Is(err, errorx.ErrZoneNotFound):
+			response.JSON(w, http.StatusNotFound, "zone not found", nil)
+		case errors.Is(err, errorx.ErrK8sClusterNotFound):
+			response.JSON(w, http.StatusNotFound, "cluster not found", nil)
+		case errors.Is(err, errorx.ErrNoHealthyDataplane):
+			response.JSON(w, http.StatusServiceUnavailable, "no healthy dataplane available", nil)
+		case errors.Is(err, errorx.ErrDataplaneValidationFailed):
+			response.JSON(w, http.StatusFailedDependency, "failed to validate kubernetes cluster", nil)
+		default:
+			response.JSON(w, http.StatusInternalServerError, "failed to update kubernetes cluster", nil)
+		}
+		return
+	}
+
+	response.JSON(w, http.StatusOK, "cluster updated", httpdto.NewK8sClusterDetail(item))
 }
 
 func (h *K8sHandler) handleDeleteCluster(w http.ResponseWriter, r *http.Request, clusterID string) {
@@ -179,6 +266,8 @@ func (h *K8sHandler) handleDeleteCluster(w http.ResponseWriter, r *http.Request,
 			response.JSON(w, http.StatusBadRequest, "invalid request", nil)
 		case errors.Is(err, errorx.ErrK8sClusterNotFound):
 			response.JSON(w, http.StatusNotFound, "cluster not found", nil)
+		case errors.Is(err, errorx.ErrK8sClusterHasResources):
+			response.JSON(w, http.StatusConflict, "cluster still has resources", nil)
 		default:
 			response.JSON(w, http.StatusInternalServerError, "failed to delete kubernetes cluster", nil)
 		}
@@ -202,12 +291,4 @@ func parseK8sClusterPath(rawPath string) (clusterID string, action string, ok bo
 	default:
 		return "", "", false
 	}
-}
-
-func parseFormBool(raw string) bool {
-	value, err := strconv.ParseBool(strings.TrimSpace(raw))
-	if err != nil {
-		return false
-	}
-	return value
 }

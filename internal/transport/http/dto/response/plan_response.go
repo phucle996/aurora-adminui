@@ -5,15 +5,16 @@ import (
 )
 
 type Plan struct {
-	ID           string `json:"id"`
-	ResourceType string `json:"resource_type"`
-	Code         string `json:"code"`
-	Name         string `json:"name"`
-	Description  string `json:"description"`
-	Status       string `json:"status"`
-	VCPU         int    `json:"vcpu"`
-	RAMGB        int    `json:"ram_gb"`
-	DiskGB       int    `json:"disk_gb"`
+	ID            string `json:"id"`
+	ResourceType  string `json:"resource_type"`
+	ResourceModel string `json:"resource_model"`
+	Code          string `json:"code"`
+	Name          string `json:"name"`
+	Description   string `json:"description"`
+	Status        string `json:"status"`
+	VCPU          int    `json:"vcpu"`
+	RAMGB         int    `json:"ram_gb"`
+	DiskGB        int    `json:"disk_gb"`
 }
 
 type ListPlansResponse struct {
@@ -30,14 +31,15 @@ func NewListPlansResponse(items []entity.Plan) ListPlansResponse {
 
 func NewPlan(item entity.Plan) Plan {
 	return Plan{
-		ID:           item.ID.String(),
-		ResourceType: string(item.ResourceType),
-		Code:         item.Code,
-		Name:         item.Name,
-		Description:  item.Description,
-		Status:       string(item.Status),
-		VCPU:         item.VCPU,
-		RAMGB:        item.RAMGB,
-		DiskGB:       item.DiskGB,
+		ID:            item.ID.String(),
+		ResourceType:  string(item.ResourceType),
+		ResourceModel: item.ResourceModel,
+		Code:          item.Code,
+		Name:          item.Name,
+		Description:   item.Description,
+		Status:        string(item.Status),
+		VCPU:          item.VCPU,
+		RAMGB:         item.RAMGB,
+		DiskGB:        item.DiskGB,
 	}
 }

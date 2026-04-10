@@ -6,7 +6,6 @@ import (
 	"time"
 
 	domainsvc "aurora-adminui/internal/domain/service"
-	"aurora-adminui/internal/transport/http/middleware"
 	"aurora-adminui/internal/transport/http/response"
 )
 
@@ -16,10 +15,6 @@ type AdminSecurityHandler struct {
 
 func NewAdminSecurityHandler(svc domainsvc.AdminService) *AdminSecurityHandler {
 	return &AdminSecurityHandler{svc: svc}
-}
-
-func (h *AdminSecurityHandler) RequireAdminSession(next http.HandlerFunc) http.HandlerFunc {
-	return middleware.RequireAdminSession(h.svc, next)
 }
 
 func (h *AdminSecurityHandler) HandleTwoFactorStatus(w http.ResponseWriter, r *http.Request) {

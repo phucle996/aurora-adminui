@@ -12,21 +12,15 @@ import (
 
 	domainsvc "aurora-adminui/internal/domain/service"
 	"aurora-adminui/internal/errorx"
-	"aurora-adminui/internal/transport/http/middleware"
 	"aurora-adminui/internal/transport/http/response"
 )
 
 type ZoneHandler struct {
-	svc      domainsvc.ZoneService
-	adminSvc domainsvc.AdminService
+	svc domainsvc.ZoneService
 }
 
-func NewZoneHandler(svc domainsvc.ZoneService, adminSvc domainsvc.AdminService) *ZoneHandler {
-	return &ZoneHandler{svc: svc, adminSvc: adminSvc}
-}
-
-func (h *ZoneHandler) RequireAdminSession(next http.HandlerFunc) http.HandlerFunc {
-	return middleware.RequireAdminSession(h.adminSvc, next)
+func NewZoneHandler(svc domainsvc.ZoneService) *ZoneHandler {
+	return &ZoneHandler{svc: svc}
 }
 
 func (h *ZoneHandler) HandleZonesCollection(w http.ResponseWriter, r *http.Request) {

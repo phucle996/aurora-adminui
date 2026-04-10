@@ -9,52 +9,100 @@ import (
 	"net/url"
 	"path"
 	"strings"
+
+	"aurora-adminui/internal/transport/http/middleware"
+
+	"github.com/gin-gonic/gin"
 )
 
-func RegisterRoutes(mux *http.ServeMux, modules *Modules, controlPlaneURL *url.URL, distFS fs.FS) {
+func RegisterRoutes(router *gin.Engine, modules *Modules, controlPlaneURL *url.URL, distFS fs.FS) {
 	static := http.FileServer(http.FS(distFS))
 	apiProxy := newControlPlaneProxy(controlPlaneURL)
+	wrapHTTP := func(next http.HandlerFunc) gin.HandlerFunc {
+		return gin.WrapF(next)
+	}
+	requireAdminHTTP := func(next http.HandlerFunc) gin.HandlerFunc {
+		return gin.WrapF(middleware.RequireAdminSession(modules.AdminService, next))
+	}
+	requireAdminGin := func(next gin.HandlerFunc) gin.HandlerFunc {
+		return func(c *gin.Context) {
+			middleware.RequireAdminSession(modules.AdminService, func(http.ResponseWriter, *http.Request) {
+				next(c)
+			})(c.Writer, c.Request)
+		}
+	}
 
-	mux.HandleFunc("/api/v1/admin/auth/token-login/init", modules.AdminAuthHandler.HandleTokenLoginInit)
-	mux.HandleFunc("/api/v1/admin/auth/token-login/verify-2fa", modules.AdminAuthHandler.HandleTokenLoginVerify2FA)
-	mux.HandleFunc("/api/v1/admin/auth/logout", modules.AdminAuthHandler.RequireAdminSession(modules.AdminAuthHandler.HandleLogout))
-	mux.HandleFunc("/api/v1/admin/auth/session", modules.AdminAuthHandler.RequireAdminSession(modules.AdminAuthHandler.HandleSessionStatus))
-	mux.HandleFunc("/api/v1/admin/auth/token/rotate", modules.AdminAuthHandler.RequireAdminSession(modules.AdminAuthHandler.HandleRotateToken))
+	router.POST("/api/v1/admin/auth/token-login/init", wrapHTTP(modules.AdminAuthHandler.HandleTokenLoginInit))
+	router.POST("/api/v1/admin/auth/token-login/verify-2fa", wrapHTTP(modules.AdminAuthHandler.HandleTokenLoginVerify2FA))
+	router.POST("/api/v1/admin/auth/logout", requireAdminHTTP(modules.AdminAuthHandler.HandleLogout))
+	router.GET("/api/v1/admin/auth/session", requireAdminHTTP(modules.AdminAuthHandler.HandleSessionStatus))
+	router.POST("/api/v1/admin/auth/token/rotate", requireAdminHTTP(modules.AdminAuthHandler.HandleRotateToken))
 
-	mux.HandleFunc("/api/v1/admin/2fa/status", modules.AdminSecurityHandler.RequireAdminSession(modules.AdminSecurityHandler.HandleTwoFactorStatus))
-	mux.HandleFunc("/api/v1/admin/2fa/totp/setup/begin", modules.AdminSecurityHandler.RequireAdminSession(modules.AdminSecurityHandler.HandleBeginTOTPSetup))
-	mux.HandleFunc("/api/v1/admin/2fa/totp/setup/confirm", modules.AdminSecurityHandler.RequireAdminSession(modules.AdminSecurityHandler.HandleConfirmTOTPSetup))
-	mux.HandleFunc("/api/v1/admin/2fa/disable", modules.AdminSecurityHandler.RequireAdminSession(modules.AdminSecurityHandler.HandleDisableTwoFactor))
+	router.GET("/api/v1/admin/2fa/status", requireAdminHTTP(modules.AdminSecurityHandler.HandleTwoFactorStatus))
+	router.POST("/api/v1/admin/2fa/totp/setup/begin", requireAdminHTTP(modules.AdminSecurityHandler.HandleBeginTOTPSetup))
+	router.POST("/api/v1/admin/2fa/totp/setup/confirm", requireAdminHTTP(modules.AdminSecurityHandler.HandleConfirmTOTPSetup))
+	router.POST("/api/v1/admin/2fa/disable", requireAdminHTTP(modules.AdminSecurityHandler.HandleDisableTwoFactor))
 
-	mux.HandleFunc("/api/v1/admin/hypervisor/metrics/ws", modules.HypervisorHandler.RequireAdminSession(modules.HypervisorHandler.HandleMetricsStream))
-	mux.HandleFunc("/api/v1/admin/hypervisor/nodes", modules.HypervisorHandler.RequireAdminSession(modules.HypervisorHandler.HandleListNodes))
-	mux.HandleFunc("/api/v1/admin/hypervisor/nodes/", modules.HypervisorHandler.RequireAdminSession(modules.HypervisorHandler.HandleNodeItem))
-	mux.HandleFunc("/api/v1/admin/k8s/clusters", modules.K8sHandler.RequireAdminSession(modules.K8sHandler.HandleClustersCollection))
-	mux.HandleFunc("/api/v1/admin/k8s/clusters/", modules.K8sHandler.RequireAdminSession(modules.K8sHandler.HandleClusterItem))
-	mux.HandleFunc("/api/v1/admin/users", modules.UserHandler.RequireAdminSession(modules.UserHandler.HandleListUsers))
-	mux.HandleFunc("/api/v1/admin/plans", modules.PlanHandler.RequireAdminSession(modules.PlanHandler.HandlePlansCollection))
-	mux.HandleFunc("/api/v1/admin/roles/permissions", modules.RoleHandler.RequireAdminSession(modules.RoleHandler.HandleListPermissions))
-	mux.HandleFunc("/api/v1/admin/roles", modules.RoleHandler.RequireAdminSession(func(w http.ResponseWriter, r *http.Request) {
+	router.GET("/api/v1/admin/hypervisor/metrics/ws", requireAdminHTTP(modules.HypervisorHandler.HandleMetricsStream))
+	router.GET("/api/v1/admin/hypervisor/nodes", requireAdminHTTP(modules.HypervisorHandler.HandleListNodes))
+	router.Any("/api/v1/admin/hypervisor/nodes/*rest", requireAdminHTTP(modules.HypervisorHandler.HandleNodeItem))
+
+	router.GET("/api/v1/admin/k8s/clusters", requireAdminHTTP(modules.K8sHandler.HandleClustersCollection))
+	router.POST("/api/v1/admin/k8s/clusters", requireAdminHTTP(modules.K8sHandler.HandleClustersCollection))
+	router.Any("/api/v1/admin/k8s/clusters/*rest", requireAdminHTTP(modules.K8sHandler.HandleClusterItem))
+
+	router.GET("/api/v1/admin/resource-definitions/template-options", requireAdminGin(modules.ResourceDefinitionHandler.ListRDTemplateOptions))
+	router.GET("/api/v1/admin/resource-definitions", requireAdminGin(modules.ResourceDefinitionHandler.ListRD))
+	router.POST("/api/v1/admin/resource-definitions", requireAdminGin(modules.ResourceDefinitionHandler.CreateRD))
+	router.GET("/api/v1/admin/resource-definitions/:id/zones", requireAdminGin(modules.ResourceDefinitionHandler.ListRDZones))
+	router.PUT("/api/v1/admin/resource-definitions/:id/zones", requireAdminGin(modules.ResourceDefinitionHandler.ReplaceRDZones))
+	router.PATCH("/api/v1/admin/resource-definitions/:id", requireAdminGin(modules.ResourceDefinitionHandler.UpdateRDStatus))
+	router.DELETE("/api/v1/admin/resource-definitions/:id", requireAdminGin(modules.ResourceDefinitionHandler.DeleteRD))
+
+	router.GET("/api/v1/admin/marketplace/model-options", requireAdminHTTP(modules.MarketplaceHandler.HandleMarketplaceCollection))
+	router.GET("/api/v1/admin/marketplace/template-options", requireAdminHTTP(modules.MarketplaceHandler.HandleMarketplaceCollection))
+	router.GET("/api/v1/admin/marketplace", requireAdminHTTP(modules.MarketplaceHandler.HandleMarketplaceCollection))
+	router.POST("/api/v1/admin/marketplace", requireAdminHTTP(modules.MarketplaceHandler.HandleMarketplaceCollection))
+	router.Any("/api/v1/admin/marketplace/:id", requireAdminHTTP(modules.MarketplaceHandler.HandleMarketplaceItem))
+
+	router.GET("/api/v1/admin/resource-templates/catalog", requireAdminHTTP(modules.TemplateRenderHandler.HandleListTemplateRenderCatalog))
+	router.POST("/api/v1/admin/resource-templates", requireAdminHTTP(modules.TemplateRenderHandler.HandleTemplateRenderCollection))
+	router.GET("/api/v1/admin/resource-templates/:id", requireAdminHTTP(modules.TemplateRenderHandler.HandleTemplateRenderItem))
+	router.PATCH("/api/v1/admin/resource-templates/:id", requireAdminHTTP(modules.TemplateRenderHandler.HandleTemplateRenderItem))
+	router.DELETE("/api/v1/admin/resource-templates/:id", requireAdminHTTP(modules.TemplateRenderHandler.HandleTemplateRenderItem))
+
+	router.GET("/api/v1/admin/users", requireAdminHTTP(modules.UserHandler.HandleListUsers))
+	router.GET("/api/v1/admin/plans", requireAdminHTTP(modules.PlanHandler.HandlePlansCollection))
+	router.POST("/api/v1/admin/plans", requireAdminHTTP(modules.PlanHandler.HandlePlansCollection))
+	router.GET("/api/v1/admin/roles/permissions", requireAdminHTTP(modules.RoleHandler.HandleListPermissions))
+	router.GET("/api/v1/admin/roles", requireAdminHTTP(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			modules.RoleHandler.HandleListRoles(w, r)
-		case http.MethodPost:
-			modules.RoleHandler.HandleCreateRole(w, r)
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
 	}))
-	mux.HandleFunc("/api/v1/admin/zones", modules.ZoneHandler.RequireAdminSession(modules.ZoneHandler.HandleZonesCollection))
-	mux.HandleFunc("/api/v1/admin/zones/", modules.ZoneHandler.RequireAdminSession(modules.ZoneHandler.HandleZoneItem))
+	router.POST("/api/v1/admin/roles", requireAdminHTTP(modules.RoleHandler.HandleCreateRole))
+	router.GET("/api/v1/admin/zones", requireAdminHTTP(modules.ZoneHandler.HandleZonesCollection))
+	router.POST("/api/v1/admin/zones", requireAdminHTTP(modules.ZoneHandler.HandleZonesCollection))
+	router.DELETE("/api/v1/admin/zones/:id", requireAdminHTTP(modules.ZoneHandler.HandleZoneItem))
 
-	mux.Handle("/api/", apiProxy)
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+	router.GET("/healthz", func(c *gin.Context) {
+		w := c.Writer
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		_, _ = io.WriteString(w, "ok")
 	})
-	mux.Handle("/", spaHandler(distFS, static))
+	router.NoRoute(func(c *gin.Context) {
+		if strings.HasPrefix(c.Request.URL.Path, "/api/") {
+			apiProxy.ServeHTTP(c.Writer, c.Request)
+			return
+		}
+		spaHandler(distFS, static)(c.Writer, c.Request)
+	})
 }
 
+// newControlPlaneProxy forwards every unhandled /api request to controlplane.
 func newControlPlaneProxy(target *url.URL) *httputil.ReverseProxy {
 	proxy := httputil.NewSingleHostReverseProxy(target)
 	proxy.ErrorHandler = func(w http.ResponseWriter, _ *http.Request, err error) {
@@ -64,6 +112,7 @@ func newControlPlaneProxy(target *url.URL) *httputil.ReverseProxy {
 	return proxy
 }
 
+// spaHandler serves built assets directly and falls back to index.html for client-side routes.
 func spaHandler(distFS fs.FS, static http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cleanPath := path.Clean("/" + strings.TrimPrefix(r.URL.Path, "/"))
@@ -87,6 +136,7 @@ func spaHandler(distFS fs.FS, static http.Handler) http.HandlerFunc {
 	}
 }
 
+// fileExists checks whether a built frontend asset exists in the embedded dist filesystem.
 func fileExists(distFS fs.FS, name string) bool {
 	info, err := fs.Stat(distFS, name)
 	if err != nil {

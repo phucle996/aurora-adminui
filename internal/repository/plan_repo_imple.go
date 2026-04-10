@@ -26,6 +26,7 @@ func (r *PlanRepoImple) ListPlans(ctx context.Context) ([]entity.Plan, error) {
 		`SELECT
 		    rp.id,
 		    rp.resource_type,
+		    COALESCE(rp.resource_model, ''),
 		    rp.code,
 		    rp.name,
 		    COALESCE(rp.description, ''),
@@ -49,6 +50,7 @@ func (r *PlanRepoImple) ListPlans(ctx context.Context) ([]entity.Plan, error) {
 		if err := rows.Scan(
 			&item.ID,
 			&item.ResourceType,
+			&item.ResourceModel,
 			&item.Code,
 			&item.Name,
 			&item.Description,
@@ -84,10 +86,11 @@ func (r *PlanRepoImple) CreateVPSPlan(ctx context.Context, item *entity.Plan) er
 	_, err = tx.Exec(
 		ctx,
 		`INSERT INTO plan.resource_packages (
-		    id, resource_type, code, name, description, status, created_at, retired_at
-		  ) VALUES ($1, $2, $3, $4, $5, $6, $7, NULL)`,
+		    id, resource_type, resource_model, code, name, description, status, created_at, retired_at
+		  ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULL)`,
 		item.ID,
 		item.ResourceType,
+		item.ResourceModel,
 		item.Code,
 		item.Name,
 		item.Description,

@@ -8,7 +8,6 @@ import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -49,18 +48,6 @@ function validationTone(status: string) {
     default:
       return 'bg-slate-400'
   }
-}
-
-function capabilityBadges(cluster: {
-  supports_dbaas: boolean
-  supports_serverless: boolean
-  supports_generic_workloads: boolean
-}) {
-  return [
-    cluster.supports_dbaas ? 'DBaaS' : '',
-    cluster.supports_serverless ? 'Serverless' : '',
-    cluster.supports_generic_workloads ? 'Generic workloads' : '',
-  ].filter(Boolean)
 }
 
 export function K8sPlatformPage() {
@@ -123,10 +110,11 @@ export function K8sPlatformPage() {
         <section className='page-header'>
           <div className='space-y-2'>
             <p className='subtle-kicker'>Resource substrate</p>
-            <h1 className='page-title'>K8s Resource Platform</h1>
+            <h1 className='page-title'>K8s Infrastructure</h1>
             <p className='page-copy'>
               Register Kubernetes clusters as generic execution substrates for
-              future DBaaS, serverless, and operator-managed platform resources.
+              operator-managed platform resources. Each cluster belongs to one
+              zone.
             </p>
           </div>
           <Button asChild>
@@ -146,7 +134,6 @@ export function K8sPlatformPage() {
                 <TableHead className='w-[160px]'>Status</TableHead>
                 <TableHead className='w-[130px]'>Version</TableHead>
                 <TableHead className='w-[280px]'>API server</TableHead>
-                <TableHead className='w-[240px]'>Capabilities</TableHead>
                 <TableHead className='w-[190px]'>Last validated</TableHead>
                 <TableHead className='w-[180px] text-right'>Actions</TableHead>
               </TableRow>
@@ -154,13 +141,13 @@ export function K8sPlatformPage() {
             <TableBody>
               {clustersQuery.isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className='h-24 text-center'>
+                  <TableCell colSpan={7} className='h-24 text-center'>
                     Loading clusters...
                   </TableCell>
                 </TableRow>
               ) : clustersQuery.isError ? (
                 <TableRow>
-                  <TableCell colSpan={8} className='h-24'>
+                  <TableCell colSpan={7} className='h-24'>
                     <div className='flex items-start justify-center gap-3 text-sm text-warning'>
                       <ShieldAlert className='mt-0.5 size-4 shrink-0' />
                       <span>
@@ -201,23 +188,6 @@ export function K8sPlatformPage() {
                     <TableCell className='font-mono text-xs text-muted-foreground'>
                       {cluster.api_server_url}
                     </TableCell>
-                    <TableCell>
-                      <div className='flex flex-wrap gap-2'>
-                        {capabilityBadges(cluster).length > 0 ? (
-                          capabilityBadges(cluster).map((capability) => (
-                            <Badge
-                              key={capability}
-                              variant='secondary'
-                              className='rounded-full px-3 py-1'
-                            >
-                              {capability}
-                            </Badge>
-                          ))
-                        ) : (
-                          <span className='text-sm text-muted-foreground'>-</span>
-                        )}
-                      </div>
-                    </TableCell>
                     <TableCell className='text-sm text-muted-foreground'>
                       {formatRelativeDateTime(cluster.last_validated_at)}
                     </TableCell>
@@ -252,7 +222,7 @@ export function K8sPlatformPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={8} className='h-24 text-center'>
+                  <TableCell colSpan={7} className='h-24 text-center'>
                     No kubernetes clusters found.
                   </TableCell>
                 </TableRow>

@@ -3,6 +3,7 @@ import { z } from 'zod'
 const planSchema = z.object({
   id: z.string(),
   resource_type: z.string(),
+  resource_model: z.string(),
   code: z.string(),
   name: z.string(),
   description: z.string(),
@@ -36,6 +37,7 @@ export async function listPlans(): Promise<Plan[]> {
 
 export async function createPlan(input: {
   resourceType: string
+  resourceModel: string
   code: string
   name: string
   description: string

@@ -53,9 +53,27 @@ export const sidebarData: SidebarData = {
           icon: Server,
         },
         {
-          title: 'K8s Resource Platform',
-          url: '/k8s',
+          title: 'Resource Platform',
           icon: ShipWheel,
+          items: [
+            {
+              title: 'Resource Definitions',
+              url: '/resource-definition',
+            },
+            {
+              title: 'K8s Infrastructure',
+              url: '/k8s',
+            },
+            {
+              title: 'Template Render',
+              url: '/resource-templates',
+            },
+          ],
+        },
+        {
+          title: 'Marketplace',
+          url: '/marketplace',
+          icon: Boxes,
         },
         {
           title: 'Plans',

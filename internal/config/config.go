@@ -10,6 +10,7 @@ type Config struct {
 	Postgres     PostgresConfig
 	Redis        RedisConfig
 	Admin        AdminConfig
+	LogLV        string
 }
 
 type ServerConfig struct {
@@ -21,7 +22,8 @@ type ServerConfig struct {
 }
 
 type ControlPlaneConfig struct {
-	BaseURL string
+	BaseURL  string
+	GRPCAddr string
 }
 
 type VictoriaConfig struct {
@@ -60,7 +62,8 @@ func Load() *Config {
 			ShutdownTimeout:   10 * time.Second,
 		},
 		ControlPlane: ControlPlaneConfig{
-			BaseURL: getEnv("ADMIN_UI_CONTROLPLANE_URL", "http://127.0.0.1:8000"),
+			BaseURL:  getEnv("ADMIN_UI_CONTROLPLANE_URL", "http://127.0.0.1:8000"),
+			GRPCAddr: getEnv("ADMIN_UI_CONTROLPLANE_GRPC_ADDR", "127.0.0.1:9106"),
 		},
 		Victoria: VictoriaConfig{
 			QueryBaseURL: getEnv("ADMIN_UI_VICTORIA_QUERY_BASE_URL", ""),
@@ -81,5 +84,6 @@ func Load() *Config {
 			BootstrapTelegramBotToken: getEnv("ADMIN_UI_BOOTSTRAP_TELEGRAM_BOT_TOKEN", ""),
 			BootstrapTelegramChatID:   getEnv("ADMIN_UI_BOOTSTRAP_TELEGRAM_CHAT_ID", ""),
 		},
+		LogLV: getEnv("ADMIN_UI_LOG_LEVEL", "info"),
 	}
 }

@@ -28,7 +28,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
@@ -231,34 +230,32 @@ export function HypervisorNodes() {
                             </span>
                             <div className='min-w-0 space-y-1'>
                               {editingNodeID === node.node_id ? (
-                                <div className='space-y-2'>
+                                <div className='flex items-center gap-2'>
                                   <Input
                                     value={draftName}
                                     onChange={(event) =>
                                       setDraftName(event.target.value)
                                     }
-                                    className='h-8'
+                                    className='h-8 flex-1'
                                     autoFocus
                                   />
-                                  <div className='flex items-center gap-2'>
-                                    <Button
-                                      size='icon'
-                                      className='size-8'
-                                      onClick={() => saveEdit(node.node_id)}
-                                      disabled={renameMutation.isPending}
-                                    >
-                                      <Check className='size-4' />
-                                    </Button>
-                                    <Button
-                                      size='icon'
-                                      variant='outline'
-                                      className='size-8'
-                                      onClick={cancelEdit}
-                                      disabled={renameMutation.isPending}
-                                    >
-                                      <X className='size-4' />
-                                    </Button>
-                                  </div>
+                                  <Button
+                                    size='icon'
+                                    className='size-8 shrink-0'
+                                    onClick={() => saveEdit(node.node_id)}
+                                    disabled={renameMutation.isPending}
+                                  >
+                                    <Check className='size-4' />
+                                  </Button>
+                                  <Button
+                                    size='icon'
+                                    variant='outline'
+                                    className='size-8 shrink-0'
+                                    onClick={cancelEdit}
+                                    disabled={renameMutation.isPending}
+                                  >
+                                    <X className='size-4' />
+                                  </Button>
                                 </div>
                               ) : (
                                 <>
@@ -345,13 +342,6 @@ export function HypervisorNodes() {
                                 </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align='end' className='w-56'>
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuItem
-                                  onClick={() => beginEdit(node)}
-                                >
-                                  Rename
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
                                 <DropdownMenuLabel>
                                   Assign to zone
                                 </DropdownMenuLabel>
@@ -363,9 +353,15 @@ export function HypervisorNodes() {
                                       <DropdownMenuRadioItem
                                         key={zone.id}
                                         value={zone.id}
-                                        disabled={assignZoneMutation.isPending}
+                                        disabled={
+                                          assignZoneMutation.isPending ||
+                                          zone.id === node.zone_id
+                                        }
                                         onSelect={(event) => {
                                           event.preventDefault()
+                                          if (zone.id === node.zone_id) {
+                                            return
+                                          }
                                           handleAssignZone(node, zone)
                                         }}
                                       >

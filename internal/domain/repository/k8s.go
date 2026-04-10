@@ -9,7 +9,9 @@ import (
 type K8sRepository interface {
 	ListClusters(ctx context.Context) ([]entity.K8sCluster, error)
 	GetClusterByID(ctx context.Context, id string) (*entity.K8sCluster, error)
-	CreateCluster(ctx context.Context, cluster *entity.K8sCluster) error
-	UpdateClusterValidation(ctx context.Context, cluster *entity.K8sCluster) error
+	ListClusterNodes(ctx context.Context, id string) ([]entity.K8sClusterNode, error)
+	CreateCluster(ctx context.Context, input entity.K8sClusterCreateInput) (*entity.K8sCluster, error)
+	UpdateCluster(ctx context.Context, id string, input entity.K8sClusterUpdateInput) (*entity.K8sCluster, error)
+	RevalidateCluster(ctx context.Context, id string) (*entity.K8sCluster, error)
 	DeleteCluster(ctx context.Context, id string) error
 }

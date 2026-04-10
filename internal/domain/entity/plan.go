@@ -22,6 +22,7 @@ const (
 type Plan struct {
 	ID           uuid.UUID
 	ResourceType ResourceType
+	ResourceModel string
 	Code         string
 	Name         string
 	Description  string

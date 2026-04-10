@@ -25,8 +25,9 @@ func (s *PlanSvcImple) ListPlans(ctx context.Context) ([]entity.Plan, error) {
 	return s.repo.ListPlans(ctx)
 }
 
-func (s *PlanSvcImple) CreatePlan(ctx context.Context, resourceType, code, name, description string, vcpu, ramGB, diskGB int) (*entity.Plan, error) {
+func (s *PlanSvcImple) CreatePlan(ctx context.Context, resourceType, resourceModel, code, name, description string, vcpu, ramGB, diskGB int) (*entity.Plan, error) {
 	resourceType = strings.ToLower(strings.TrimSpace(resourceType))
+	resourceModel = strings.TrimSpace(resourceModel)
 	code = strings.TrimSpace(code)
 	name = strings.TrimSpace(name)
 	description = strings.TrimSpace(description)
@@ -47,6 +48,7 @@ func (s *PlanSvcImple) CreatePlan(ctx context.Context, resourceType, code, name,
 	item := &entity.Plan{
 		ID:           uuid.New(),
 		ResourceType: entity.ResourceType(resourceType),
+		ResourceModel: resourceModel,
 		Code:         code,
 		Name:         name,
 		Description:  description,

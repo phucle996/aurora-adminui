@@ -11,7 +11,6 @@ import (
 	"aurora-adminui/internal/errorx"
 	requestdto "aurora-adminui/internal/transport/http/dto/request"
 	httpdto "aurora-adminui/internal/transport/http/dto/response"
-	"aurora-adminui/internal/transport/http/middleware"
 	"aurora-adminui/internal/transport/http/response"
 
 	"github.com/gorilla/websocket"
@@ -19,24 +18,18 @@ import (
 
 type HypervisorHandler struct {
 	svc      domainsvc.HypervisorService
-	adminSvc domainsvc.AdminService
 	upgrader websocket.Upgrader
 }
 
-func NewHypervisorHandler(svc domainsvc.HypervisorService, adminSvc domainsvc.AdminService) *HypervisorHandler {
+func NewHypervisorHandler(svc domainsvc.HypervisorService) *HypervisorHandler {
 	return &HypervisorHandler{
-		svc:      svc,
-		adminSvc: adminSvc,
+		svc: svc,
 		upgrader: websocket.Upgrader{
 			CheckOrigin: func(r *http.Request) bool {
 				return true
 			},
 		},
 	}
-}
-
-func (h *HypervisorHandler) RequireAdminSession(next http.HandlerFunc) http.HandlerFunc {
-	return middleware.RequireAdminSession(h.adminSvc, next)
 }
 
 func (h *HypervisorHandler) HandleListNodes(w http.ResponseWriter, r *http.Request) {

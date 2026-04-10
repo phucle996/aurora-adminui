@@ -12,7 +12,6 @@ import { ThemeSwitch } from '@/components/theme-switch'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -37,9 +36,6 @@ export function AddK8sClusterPage() {
   const [description, setDescription] = useState('')
   const [zoneId, setZoneId] = useState('')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [supportsDbaas, setSupportsDbaas] = useState(true)
-  const [supportsServerless, setSupportsServerless] = useState(false)
-  const [supportsGenericWorkloads, setSupportsGenericWorkloads] = useState(true)
 
   const createClusterMutation = useMutation({
     mutationFn: createK8sCluster,
@@ -74,9 +70,6 @@ export function AddK8sClusterPage() {
       name: name.trim(),
       description: description.trim(),
       zoneId,
-      supportsDbaas,
-      supportsServerless,
-      supportsGenericWorkloads,
       kubeconfig: selectedFile,
     })
   }
@@ -104,8 +97,8 @@ export function AddK8sClusterPage() {
             <p className='subtle-kicker'>Cluster import</p>
             <h1 className='page-title'>Register a Kubernetes cluster</h1>
             <p className='page-copy'>
-              Import a kubeconfig-backed cluster, bind it to an optional zone,
-              and declare which higher-level platform capabilities it can host.
+              Import a kubeconfig-backed cluster and bind it to an optional zone
+              so it becomes available to the resource platform.
             </p>
           </div>
           <Button variant='outline' asChild>
@@ -167,61 +160,6 @@ export function AddK8sClusterPage() {
                   onChange={(event) => setDescription(event.target.value)}
                   placeholder='Describe what this cluster should host in the platform.'
                 />
-              </div>
-
-              <div className='space-y-3 rounded-xl border border-border/80 bg-muted/30 px-4 py-4'>
-                <p className='text-sm font-medium text-foreground'>
-                  Capability flags
-                </p>
-                <label className='flex items-start gap-3'>
-                  <Checkbox
-                    checked={supportsDbaas}
-                    onCheckedChange={(checked) =>
-                      setSupportsDbaas(checked === true)
-                    }
-                  />
-                  <span className='space-y-1'>
-                    <span className='block text-sm font-medium text-foreground'>
-                      DBaaS
-                    </span>
-                    <span className='block text-sm text-muted-foreground'>
-                      Allow this cluster to host future database control planes.
-                    </span>
-                  </span>
-                </label>
-                <label className='flex items-start gap-3'>
-                  <Checkbox
-                    checked={supportsServerless}
-                    onCheckedChange={(checked) =>
-                      setSupportsServerless(checked === true)
-                    }
-                  />
-                  <span className='space-y-1'>
-                    <span className='block text-sm font-medium text-foreground'>
-                      Serverless
-                    </span>
-                    <span className='block text-sm text-muted-foreground'>
-                      Mark this cluster as eligible for future serverless runtimes.
-                    </span>
-                  </span>
-                </label>
-                <label className='flex items-start gap-3'>
-                  <Checkbox
-                    checked={supportsGenericWorkloads}
-                    onCheckedChange={(checked) =>
-                      setSupportsGenericWorkloads(checked === true)
-                    }
-                  />
-                  <span className='space-y-1'>
-                    <span className='block text-sm font-medium text-foreground'>
-                      Generic workloads
-                    </span>
-                    <span className='block text-sm text-muted-foreground'>
-                      Keep this cluster available as a reusable substrate for
-                      upcoming resource products.
-                    </span>
-                  </span>
-                </label>
               </div>
             </CardContent>
           </Card>

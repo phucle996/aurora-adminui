@@ -6,12 +6,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type K8sClusterImportMode string
-
-const (
-	K8sClusterImportModeKubeconfig K8sClusterImportMode = "kubeconfig"
-)
-
 type K8sClusterValidationStatus string
 
 const (
@@ -22,31 +16,39 @@ const (
 )
 
 type K8sCluster struct {
-	ID                       uuid.UUID
-	Name                     string
-	Description              string
-	ImportMode               K8sClusterImportMode
-	KubeconfigCiphertext     string
-	APIServerURL             string
-	CurrentContext           string
-	KubernetesVersion        string
-	ValidationStatus         K8sClusterValidationStatus
-	LastValidatedAt          *time.Time
-	LastValidationError      string
-	SupportsDBAAS            bool
-	SupportsServerless       bool
-	SupportsGenericWorkloads bool
-	CreatedAt                time.Time
-	ZoneID                   *uuid.UUID
-	ZoneName                 string
+	ID                   uuid.UUID
+	Name                 string
+	Description          string
+	KubeconfigCiphertext string
+	APIServerURL         string
+	CurrentContext       string
+	KubernetesVersion    string
+	ValidationStatus     K8sClusterValidationStatus
+	LastValidatedAt      *time.Time
+	CreatedAt            time.Time
+	ZoneID               *uuid.UUID
+	ZoneName             string
+	Nodes                []K8sClusterNode
 }
 
 type K8sClusterCreateInput struct {
-	Name                     string
-	Description              string
-	ZoneID                   string
-	SupportsDBAAS            bool
-	SupportsServerless       bool
-	SupportsGenericWorkloads bool
-	Kubeconfig               []byte
+	Name        string
+	Description string
+	ZoneID      string
+	Kubeconfig  []byte
+}
+
+type K8sClusterNode struct {
+	Name             string
+	Roles            []string
+	KubeletVersion   string
+	ContainerRuntime string
+	OSImage          string
+	KernelVersion    string
+	Ready            bool
+}
+
+type K8sClusterUpdateInput struct {
+	ZoneID     string
+	Kubeconfig []byte
 }

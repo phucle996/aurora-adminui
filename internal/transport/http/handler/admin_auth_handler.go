@@ -25,10 +25,6 @@ func (h *AdminAuthHandler) BootstrapIfNeeded(ctx context.Context) error {
 	return h.svc.BootstrapIfNeeded(ctx)
 }
 
-func (h *AdminAuthHandler) RequireAdminSession(next http.HandlerFunc) http.HandlerFunc {
-	return middleware.RequireAdminSession(h.svc, next)
-}
-
 func (h *AdminAuthHandler) HandleTokenLoginInit(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)

@@ -10,21 +10,15 @@ import (
 	"aurora-adminui/internal/errorx"
 	domainrequest "aurora-adminui/internal/transport/http/dto/request"
 	httpdto "aurora-adminui/internal/transport/http/dto/response"
-	"aurora-adminui/internal/transport/http/middleware"
 	"aurora-adminui/internal/transport/http/response"
 )
 
 type RoleHandler struct {
-	svc      domainsvc.RoleService
-	adminSvc domainsvc.AdminService
+	svc domainsvc.RoleService
 }
 
-func NewRoleHandler(svc domainsvc.RoleService, adminSvc domainsvc.AdminService) *RoleHandler {
-	return &RoleHandler{svc: svc, adminSvc: adminSvc}
-}
-
-func (h *RoleHandler) RequireAdminSession(next http.HandlerFunc) http.HandlerFunc {
-	return middleware.RequireAdminSession(h.adminSvc, next)
+func NewRoleHandler(svc domainsvc.RoleService) *RoleHandler {
+	return &RoleHandler{svc: svc}
 }
 
 func (h *RoleHandler) HandleListRoles(w http.ResponseWriter, r *http.Request) {
